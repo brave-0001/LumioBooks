@@ -322,12 +322,18 @@ img, svg { display: block; }
 .reveal {
   opacity: 0;
   transform: translateY(24px);
-  transition: opacity 0.7s var(--ease-out), transform 0.7s var(--ease-out);
+  transition: opacity 0.6s var(--ease-out), transform 0.6s var(--ease-out);
 }
 
 .reveal.in-view {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* Book cards always visible — loaded async after observer runs */
+.book-card {
+  opacity: 1 !important;
+  transform: none !important;
 }
 
 /* ─── Home page ──────────────────────────────────────────────────────────────── */
@@ -1329,3 +1335,31 @@ img, svg { display: block; }
   color: var(--text-primary);
   box-shadow: var(--shadow-sm);
 }
+
+/* ─── Auth extras ────────────────────────────────────────────────────────────── */
+.form-input--error {
+  border-color: #C0392B;
+}
+
+.auth-error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: #8B4A4A;
+  padding: var(--space-3) var(--space-4);
+  background: rgba(139, 74, 74, 0.06);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(139, 74, 74, 0.15);
+}
+
+.auth-forgot {
+  display: block;
+  margin-top: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  text-align: right;
+  transition: color 0.2s;
+}
+
+.auth-forgot:hover { color: var(--text-primary); }

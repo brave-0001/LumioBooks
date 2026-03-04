@@ -15,11 +15,11 @@ const supabase = process.env.REACT_APP_SUPABASE_URL
     )
   : {
       auth: {
-        getSession:          async () => ({ data: { session: null } }),
-        onAuthStateChange:   () => ({ data: { subscription: { unsubscribe: () => {} } } }),
-        signInWithOtp:       async () => ({ error: null }),
-        signInWithPassword:  async () => ({ error: { message: 'Supabase not connected.' } }),
-        signOut:             async () => ({}),
+        getSession:         async () => ({ data: { session: null } }),
+        onAuthStateChange:  () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+        signInWithOtp:      async () => ({ error: null }),
+        signInWithPassword: async () => ({ error: { message: 'Supabase not connected.' } }),
+        signOut:            async () => ({}),
       },
     };
 
@@ -27,7 +27,7 @@ const supabase = process.env.REACT_APP_SUPABASE_URL
 export const AppContext = createContext(null);
 export const useApp = () => useContext(AppContext);
 
-// ─── Data — update content here, never in JSX ────────────────────────────────
+// ─── Data ─────────────────────────────────────────────────────────────────────
 const CATEGORIES = ['All', 'Design', 'Technology', 'Philosophy', 'Science', 'Literature', 'Business'];
 
 const BOOKS = [
@@ -69,7 +69,6 @@ const BOOKS = [
   },
 ];
 
-// Derived automatically — never hardcode these
 const STATS = {
   books:      BOOKS.length,
   downloads:  BOOKS.reduce((s, b) => s + b.downloads, 0),
@@ -89,7 +88,6 @@ export default function App() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Auth listener
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
@@ -99,13 +97,11 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Theme
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('lb-theme', theme);
   }, [theme]);
 
-  // Routing
   useEffect(() => {
     const sync = () => setRoute(getRoute());
     window.addEventListener('hashchange', sync);
@@ -123,14 +119,13 @@ export default function App() {
   };
 
   if (loading) return (
-    <div className="app-loader">
-      <span className="loader-dot" />
-    </div>
+    <div className="app-loader"><span className="loader-dot" /></div>
   );
 
   const renderRoute = () => {
     if (route === '/' || route === '')  return <Home />;
     if (route === '/auth')              return <Auth />;
+    if (route === '/account')           return <Account />;
     if (route === '/publish')           return <PublisherDashboard />;
     if (route.startsWith('/read/'))     return <BookReader bookId={route.split('/read/')[1]} />;
     if (route.startsWith('/book/'))     return <BookDetail bookId={route.split('/book/')[1]} />;
@@ -150,6 +145,83 @@ export default function App() {
         <Footer navigate={navigate} />
       </div>
     </AppContext.Provider>
+  );
+}
+
+// ─── Account ──────────────────────────────────────────────────────────────────
+function Account() {
+  const { session, supabase, navigate } = useApp();
+
+  if (!session) {
+    navigate('/auth');
+    return null;
+  }
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate('/');
+  };
+
+  const email    = session.user.email;
+  const joined   = new Date(session.user.created_at).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
+  const initials = email.slice(0, 2).toUpperCase();
+
+  return (
+    <div className="auth-page">
+      <div className="auth-card">
+        {/* Avatar */}
+        <div style={{
+          width: 56, height: 56,
+          borderRadius: '50%',
+          background: 'var(--bg-sunken)',
+          border: '1px solid var(--border-soft)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontFamily: 'var(--font-display)',
+          fontSize: 'var(--text-lg)',
+          fontWeight: 600,
+          color: 'var(--text-secondary)',
+          margin: '0 auto var(--space-6)',
+        }}>
+          {initials}
+        </div>
+
+        <p className="auth-eyebrow">Account</p>
+        <h1 className="auth-title" style={{ fontSize: 'var(--text-xl)' }}>
+          {email.split('@')[0]}
+        </h1>
+        <p className="auth-sub" style={{ marginBottom: 'var(--space-8)' }}>
+          {email}<br />
+          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
+            Member since {joined}
+          </span>
+        </p>
+
+        {/* Actions */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+          <button
+            className="btn btn-secondary"
+            style={{ width: '100%', justifyContent: 'center' }}
+            onClick={() => navigate('/')}
+          >
+            Browse library
+          </button>
+          <button
+            className="btn btn-secondary"
+            style={{ width: '100%', justifyContent: 'center' }}
+            onClick={() => navigate('/publish')}
+          >
+            Publish a book
+          </button>
+          <button
+            className="btn btn-ghost"
+            style={{ width: '100%', justifyContent: 'center', color: 'var(--text-tertiary)', marginTop: 'var(--space-2)' }}
+            onClick={handleSignOut}
+          >
+            Sign out
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -177,13 +249,13 @@ function Nav({ theme, session, navigate, onToggleTheme }) {
     : route.startsWith(path);
 
   return (
-    <header className={`nav${scrolled ? ' nav--scrolled' : ''}${menuOpen ? ' nav--open' : ''}`}>
+    <header className={`nav${scrolled ? ' nav--scrolled' : ''}`}>
       <button className="nav-logo" onClick={() => go('/')}>
         LumioBooks
       </button>
 
       <nav className={`nav-links${menuOpen ? ' nav-links--open' : ''}`}>
-        <button className={isActive('/')       ? 'nav-link-active' : ''} onClick={() => go('/')}>Browse</button>
+        <button className={isActive('/')        ? 'nav-link-active' : ''} onClick={() => go('/')}>Browse</button>
         <button className={isActive('/publish') ? 'nav-link-active' : ''} onClick={() => go('/publish')}>Publish</button>
         {session
           ? <button className={isActive('/account') ? 'nav-link-active' : ''} onClick={() => go('/account')}>Account</button>
@@ -192,7 +264,6 @@ function Nav({ theme, session, navigate, onToggleTheme }) {
       </nav>
 
       <div className="nav-controls">
-        {/* Liquid glass theme toggle */}
         <button
           className={`theme-toggle${theme === 'dark' ? ' theme-toggle--dark' : ''}`}
           onClick={onToggleTheme}
